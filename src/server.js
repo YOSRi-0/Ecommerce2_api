@@ -7,9 +7,9 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", require("./routes/api"));
 
-db.sync({ force: true })
+db.sync()
   .then(() => {
-    app.listen(5000, () => {
+    app.listen(5500, () => {
       console.log("listening on port 5000");
     });
   })
