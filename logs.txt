@@ -1,0 +1,1 @@
+{"username":"user3","email":"user3@gmail.com","img":null,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIzIiwiZW1haWwiOiJ1c2VyM0BnbWFpbC5jb20iLCJpbWciOm51bGwsImlhdCI6MTYzOTc1MDE1Nn0.DPhhuXPlzM6l1Q5RcdRrH441YGd3pz1bodL2DEpJ6bM"}

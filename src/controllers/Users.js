@@ -1,4 +1,5 @@
 const { Users } = require("../models");
+const { createJwt } = require("../util/jwt");
 
 // Create new user
 const createUser = async (req, res) => {
@@ -23,7 +24,21 @@ const createUser = async (req, res) => {
     return res.status(500).send({ message: "Error creating user" });
   }
 
-  res.send(createdUser);
+  const user = await Users.findOne({
+    attributes: ["username", "email", "img"],
+    where: {
+      username: createdUser.username,
+    },
+  });
+
+  createJwt(user.dataValues)
+    .then((token) => res.send({ ...user.dataValues, token }))
+    .catch((err) => {
+      console.log(err);
+      res.status(500).send({ message: "jwt creation failed" });
+    });
+
+  //res.send({ ...user.dataValues, token });
 };
 
 // Login user
@@ -50,7 +65,13 @@ const login = async (req, res) => {
     return res.status(403).send({ message: "Password is incorrect" });
   }
 
-  res.send(user);
+  console.log(user.dataValues);
+  createJwt(user.dataValues)
+    .then((token) => {
+      delete user.password;
+      res.send({ ...user.dataValues, token });
+    })
+    .catch((err) => res.status(500).send({ message: "jwt creation failed" }));
 };
 
 module.exports = { login, createUser };
