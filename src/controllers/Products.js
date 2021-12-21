@@ -1,8 +1,10 @@
-const { Products, Colors } = require("../models");
+const { Products, Colors, Sizes } = require("../models");
+const { Op } = require("sequelize");
 
 // create new product
 const createProduct = async (req, res) => {
-  const { title, description, price, img, availability, colors } = req.body;
+  const { title, description, price, img, availability, colors, sizes } =
+    req.body;
   if (!title || !title.length) {
     return res.status(400).send({ message: "Title was not provided" });
   }
@@ -25,6 +27,7 @@ const createProduct = async (req, res) => {
     description,
     availability,
     colors,
+    sizes,
   });
 
   if (!createdProduct) {
@@ -41,9 +44,18 @@ const createProduct = async (req, res) => {
     }
   }
 
+  if (sizes && sizes.length) {
+    for (let sizeValue of sizes) {
+      const size = await Sizes.findOne({
+        where: { value: sizeValue },
+      });
+      await createdProduct.addSizes(size.id);
+    }
+  }
+
   const product = await Products.findOne({
     where: { title },
-    include: Colors,
+    include: [Colors, Sizes],
   });
   res.send(product);
 };
@@ -52,7 +64,10 @@ const createProduct = async (req, res) => {
 const getProduct = async (req, res) => {
   const { id } = req.params;
 
-  const product = await Products.findOne({ where: { id }, include: Colors });
+  const product = await Products.findOne({
+    where: { id },
+    include: [Colors, Sizes],
+  });
 
   if (!product) {
     return res.status(404).send({ message: "Product was not found" });
@@ -63,7 +78,14 @@ const getProduct = async (req, res) => {
 
 // Fetch All Product
 const getAllProducts = async (req, res) => {
-  const products = await Products.findAll({ include: Colors });
+  const colors = ["red", "orange"];
+  const products = await Products.findAll({
+    // include: [{ Colors, where: { value: { [Op.in]: colors } } }, Sizes],
+    include: [
+      { model: Colors, attributes: ["value"] },
+      { model: Sizes, attributes: ["value"] },
+    ],
+  });
   if (!products) {
     return res.status(500).send({ message: "Could not retrieve products" });
   }
