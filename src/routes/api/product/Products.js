@@ -7,6 +7,7 @@ const {
   deleteProduct,
   deleteAllProducts,
   updateProduct,
+  getProductsByFilters,
 } = require("../../../controllers/Products");
 
 const router = require("express").Router();
@@ -15,6 +16,7 @@ router.post("/", createProduct);
 router.post("/color", addColor);
 router.post("/size", addSize);
 
+router.get("/q", getProductsByFilters);
 router.get("/:id", getProduct);
 router.get("/", getAllProducts);
 

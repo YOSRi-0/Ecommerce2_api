@@ -34,7 +34,6 @@ const createProduct = async (req, res) => {
     return res.status(500).send({ message: "Error creating product" });
   }
 
-  console.log(createdProduct);
   if (colors && colors.length) {
     for (let colorValue of colors) {
       const color = await Colors.findOne({
@@ -65,8 +64,19 @@ const getProduct = async (req, res) => {
   const { id } = req.params;
 
   const product = await Products.findOne({
-    where: { id },
-    include: [Colors, Sizes],
+    attributes: ["id", "title", "description", "price", "availability"],
+    include: [
+      {
+        model: Colors,
+        attributes: ["value"],
+        through: { attributes: [] },
+      },
+      {
+        model: Sizes,
+        attributes: ["value"],
+        through: { attributes: [] },
+      },
+    ],
   });
 
   if (!product) {
@@ -78,12 +88,19 @@ const getProduct = async (req, res) => {
 
 // Fetch All Product
 const getAllProducts = async (req, res) => {
-  const colors = ["red", "orange"];
   const products = await Products.findAll({
-    // include: [{ Colors, where: { value: { [Op.in]: colors } } }, Sizes],
+    attributes: ["id", "title", "description", "price", "availability"],
     include: [
-      { model: Colors, attributes: ["value"] },
-      { model: Sizes, attributes: ["value"] },
+      {
+        model: Colors,
+        attributes: ["value"],
+        through: { attributes: [] },
+      },
+      {
+        model: Sizes,
+        attributes: ["value"],
+        through: { attributes: [] },
+      },
     ],
   });
   if (!products) {
@@ -99,10 +116,64 @@ const getAllProducts = async (req, res) => {
   res.send(products);
 };
 
+// Get Products By filters (Colors, Sizes, Availability)
+const getProductsByFilters = async (req, res) => {
+  const { color = null, size = null } = req.query;
+  const availability = req.query.availability;
+  // ? req.query.availability == "true"
+  //   ? 1
+  //   : 0
+  // : null;
+
+  let query = "";
+  // availability && query +=
+  const products = await Products.findAll({
+    where: availability && {
+      availability,
+    },
+    attributes: ["id", "title", "description", "price", "availability"],
+    include: [
+      {
+        model: Colors,
+        attributes: ["value"],
+        where: color && {
+          value: {
+            [Op.eq]: color,
+          },
+        },
+        through: { attributes: [] },
+      },
+      {
+        model: Sizes,
+        attributes: ["value"],
+        where: size && {
+          value: {
+            [Op.eq]: size,
+          },
+        },
+        through: { attributes: [] },
+      },
+    ],
+  });
+
+  if (!products) {
+    return res
+      .status(500)
+      .send({ message: "Could not retrieve filtered products" });
+  }
+
+  if (products.length === 1) {
+    return res.status(404).send({
+      message: "there are no products by filters",
+    });
+  }
+
+  res.send({ ...products, count: products.length });
+};
+
 // Delete Product
 const deleteProduct = async (req, res) => {
   const { id } = req.params;
-  console.log(id);
 
   try {
     const product = await Products.findOne({ where: { id } });
@@ -171,7 +242,6 @@ const updateProduct = async (req, res) => {
     { where: { id } }
   );
 
-  console.log(updatedProduct);
   return;
 };
 
@@ -179,6 +249,7 @@ module.exports = {
   deleteProduct,
   deleteAllProducts,
   getAllProducts,
+  getProductsByFilters,
   createProduct,
   getProduct,
   updateProduct,
