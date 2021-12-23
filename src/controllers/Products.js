@@ -118,15 +118,9 @@ const getAllProducts = async (req, res) => {
 
 // Get Products By filters (Colors, Sizes, Availability)
 const getProductsByFilters = async (req, res) => {
-  const { color = null, size = null } = req.query;
-  const availability = req.query.availability;
-  // ? req.query.availability == "true"
-  //   ? 1
-  //   : 0
-  // : null;
+  const { color = null, size = null, availability = 1 } = req.query;
+  console.log(color, size, availability)
 
-  let query = "";
-  // availability && query +=
   const products = await Products.findAll({
     where: availability && {
       availability,

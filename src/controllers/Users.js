@@ -1,9 +1,11 @@
 const { Users } = require("../models");
 const { createJwt } = require("../util/jwt");
+const bcrypt = require("bcrypt");
 
 // Create new user
 const createUser = async (req, res) => {
-  const { username, email, password } = req.body;
+  // validate input
+  const { username, email, password, img } = req.body;
   if (!username || !username.length) {
     return res.status(400).send({ message: "username was not entered" });
   }
@@ -13,17 +15,27 @@ const createUser = async (req, res) => {
   if (!password || !password.length) {
     return res.status(400).send({ message: "password was not entered" });
   }
+  if (!img || !img.length) {
+    return res.status(400).send({ message: "img url was not entered" });
+  }
 
+  // Hash password
+  console.log(password);
+  const hashedPassword = await bcrypt.hash(password, 10);
+  console.log(hashedPassword);
+  // save user
   const createdUser = await Users.create({
     username,
     email,
-    password,
+    img,
+    password: hashedPassword,
   });
 
   if (!createdUser) {
     return res.status(500).send({ message: "Error creating user" });
   }
 
+  // create token
   const user = await Users.findOne({
     attributes: ["username", "email", "img"],
     where: {
@@ -55,20 +67,23 @@ const login = async (req, res) => {
     where: {
       email: email,
     },
+    attributes: ["email", "username", "img", "password"],
   });
 
   if (!user) {
     return res.status(404).send({ message: "User was not found" });
   }
 
-  if (user.password !== password) {
+  const matchPassword = await bcrypt.compare(password, user.password);
+
+  if (!matchPassword) {
     return res.status(403).send({ message: "Password is incorrect" });
   }
 
   console.log(user.dataValues);
   createJwt(user.dataValues)
     .then((token) => {
-      delete user.password;
+      delete user.dataValues.password;
       res.send({ ...user.dataValues, token });
     })
     .catch((err) => res.status(500).send({ message: "jwt creation failed" }));
